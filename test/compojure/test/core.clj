@@ -110,7 +110,22 @@
         "/foo/10"    "root"
         "/foo/10/"   "root"   
         "/foo/10/id" "10"
-        "/foo/1/x/2" "2"))))
+        "/foo/1/x/2" "2")))
+  (testing "route metadata"
+    (defroutes handler
+      #^{:bent true}
+      (GET "/" [] "root")
+      (GET "/id" [] 0)
+      (GET "/x/:x" [x] x))
+    (is (contains? (meta handler) :routes))
+    ;; Note: strip line number from metadata to avoid breaking tests
+    ;; when other parts of this file are changed
+    (is (= (map #(let [[method path args meta] %]
+                   [method path args (dissoc meta :line)])
+                (:routes (meta handler)))
+           '((GET "/" [] {:bent true})
+             (GET "/id" [] {})
+             (GET "/x/:x" [x] {}))))))
 
 (deftest wrap-test
   (testing "wrap function"

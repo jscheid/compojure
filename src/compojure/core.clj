@@ -102,12 +102,26 @@
   [& handlers]
   #(apply routing % handlers))
 
+(defn routes-metadata
+  "Extract metadata from list of routes."
+  [routes]
+  (map (fn [item]
+         (let [[method path args & body] item]
+           [method path args (meta item)]))
+       routes))
+
 (defmacro defroutes
   "Define a Ring handler function from a sequence of routes. The name may be
-  optionally be followed by a doc-string and metadata map."
+  optionally be followed by a doc-string and metadata map.
+
+  A metadata entry :routes will be set on the handler function with a
+  list of (method path arguments metadata) tuples extracted from each
+  route."
   [name & routes]
-  (let [[name routes] (name-with-attributes name routes)]
-   `(def ~name (routes ~@routes))))
+  (let [[name routes] (name-with-attributes name routes)
+        metadata (routes-metadata routes)]
+    `(def ~name (with-meta (routes ~@routes)
+                  {:routes '~metadata}))))
 
 (defmacro GET "Generate a GET route."
   [path args & body]
